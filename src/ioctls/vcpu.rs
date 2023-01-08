@@ -96,6 +96,14 @@ pub enum VcpuExit<'a> {
     IoapicEoi(u8 /* vector */),
     /// Corresponds to KVM_EXIT_HYPERV.
     Hyperv,
+    /// Corresponds to KVM_EXIT_MEMORY_FAULT.
+    MemoryFault(
+        u64, /* flags */
+        u64, /* gpa */
+        u64, /* size */
+    ),
+    /// Corresponds to KVM_EXIT_VMGEXIT.
+    Vmgexit(u64 /* ghcb_msr */, u8 /* error */),
     /// Corresponds to an exit reason that is unknown from the current version
     /// of the kvm-ioctls crate. Let the consumer decide about what to do with
     /// it.
@@ -1418,6 +1426,22 @@ impl VcpuFd {
                     Ok(VcpuExit::IoapicEoi(eoi.vector))
                 }
                 KVM_EXIT_HYPERV => Ok(VcpuExit::Hyperv),
+                50 => {
+                    #[repr(C, packed)]
+                    pub struct KvmExitVmgexit {
+                        pub ghcb_msr: u64,
+                        pub error: u8,
+                    }
+
+                    // Safe because the exit_reason (which comes from the kernel) told us which
+                    // union field to use.
+                    let exit = unsafe {
+                        (&run.__bindgen_anon_1 as *const kvm_run__bindgen_ty_1
+                            as *const KvmExitVmgexit)
+                            .read()
+                    };
+                    Ok(VcpuExit::Vmgexit(exit.ghcb_msr, exit.error))
+                }
                 r => Ok(VcpuExit::Unsupported(r)),
             }
         } else {
