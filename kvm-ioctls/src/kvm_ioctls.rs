@@ -151,6 +151,8 @@ ioctl_ior_nr!(KVM_GET_SREGS, KVMIO, 0x83, kvm_sregs);
 ioctl_iow_nr!(KVM_SET_SREGS, KVMIO, 0x84, kvm_sregs);
 #[cfg(target_arch = "x86_64")]
 ioctl_iowr_nr!(KVM_TRANSLATE, KVMIO, 0x85, kvm_translation);
+#[cfg(any(target_arch = "x86_64", target_arch = "riscv64"))]
+ioctl_iow_nr!(KVM_INTERRUPT, KVMIO, 0x86, kvm_interrupt);
 #[cfg(target_arch = "x86_64")]
 ioctl_iowr_nr!(KVM_GET_MSRS, KVMIO, 0x88, kvm_msrs);
 #[cfg(target_arch = "x86_64")]

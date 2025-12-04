@@ -662,6 +662,36 @@ impl VcpuFd {
         Ok(())
     }
 
+    /// Queue a hardware interrupt.
+    ///
+    /// See the documentation for `KVM_INTERRUPT`.
+    ///
+    /// # Arguments
+    ///
+    /// * `interrupt` - interrupt to be queued. For details check the `kvm_interrupt` structure in the
+    ///   [KVM API doc](https://www.kernel.org/doc/Documentation/virtual/kvm/api.txt).
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # use kvm_ioctls::Kvm;
+    ///
+    /// let kvm = Kvm::new().unwrap();
+    /// let vm = kvm.create_vm().unwrap();
+    /// vm.interrupt(&kvm_interrupt {
+    ///     irq: 1,
+    /// }).unwrap();
+    /// ```
+    #[cfg(any(target_arch = "x86_64", target_arch = "riscv64"))]
+    pub fn interrupt(&self, interrupt: &kvm_interrupt) -> Result<()> {
+        // SAFETY: The ioctl is safe because the kernel will only read from the interrupt struct.
+        let ret = unsafe { ioctl_with_ref(self, KVM_INTERRUPT(), interrupt) };
+        if ret < 0 {
+            return Err(errno::Error::last());
+        }
+        Ok(())
+    }
+
     /// Returns the model-specific registers (MSR) for this vCPU.
     ///
     /// It emulates `KVM_GET_MSRS` ioctl's behavior by returning the number of MSRs
