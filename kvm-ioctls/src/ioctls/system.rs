@@ -421,6 +421,35 @@ impl Kvm {
         self.get_cpuid(KVM_GET_SUPPORTED_CPUID(), num_entries)
     }
 
+    /// X86 specific call to get the system supported CPUID values related to
+    /// Hyper-V emulation.
+    ///
+    /// See the documentation for `KVM_GET_SUPPORTED_HV_CPUID`.
+    ///
+    /// # Arguments
+    ///
+    /// * `num_entries` - Maximum number of CPUID entries. This function can return less than
+    ///   this when the hardware does not support so many CPUID entries.
+    ///
+    /// Returns Error `errno::Error(libc::ENOMEM)` when the input `num_entries` is greater than
+    /// `KVM_MAX_CPUID_ENTRIES`.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// extern crate kvm_bindings;
+    /// use kvm_bindings::KVM_MAX_CPUID_ENTRIES;
+    /// use kvm_ioctls::Kvm;
+    ///
+    /// let kvm = Kvm::new().unwrap();
+    /// let mut cpuid = kvm.get_supported_hv_cpuid(KVM_MAX_CPUID_ENTRIES).unwrap();
+    /// let cpuid_entries = cpuid.as_mut_slice();
+    /// assert!(cpuid_entries.len() <= KVM_MAX_CPUID_ENTRIES);
+    /// ```
+    pub fn get_supported_hv_cpuid(&self, num_entries: usize) -> Result<CpuId> {
+        self.get_cpuid(KVM_GET_SUPPORTED_HV_CPUID(), num_entries)
+    }
+
     /// X86 specific call to get list of supported MSRS
     ///
     /// See the documentation for `KVM_GET_MSR_INDEX_LIST`.
@@ -886,6 +915,20 @@ mod tests {
 
         // Test case for more than MAX entries
         let cpuid_err = kvm.get_emulated_cpuid(KVM_MAX_CPUID_ENTRIES + 1_usize);
+        cpuid_err.unwrap_err();
+    }
+
+    #[cfg(target_arch = "x86_64")]
+    #[test]
+    fn test_get_supported_hv_cpuid() {
+        let kvm = Kvm::new().unwrap();
+        let mut cpuid = kvm.get_supported_hv_cpuid(KVM_MAX_CPUID_ENTRIES).unwrap();
+        let cpuid_entries = cpuid.as_mut_slice();
+        assert!(!cpuid_entries.is_empty());
+        assert!(cpuid_entries.len() <= KVM_MAX_CPUID_ENTRIES);
+
+        // Test case for more than MAX entries
+        let cpuid_err = kvm.get_supported_hv_cpuid(KVM_MAX_CPUID_ENTRIES + 1_usize);
         cpuid_err.unwrap_err();
     }
 

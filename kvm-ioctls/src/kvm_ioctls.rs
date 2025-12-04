@@ -27,6 +27,9 @@ ioctl_iowr_nr!(KVM_GET_EMULATED_CPUID, KVMIO, 0x09, kvm_cpuid2);
 /* Available with KVM_CAP_GET_MSR_FEATURES */
 #[cfg(target_arch = "x86_64")]
 ioctl_iowr_nr!(KVM_GET_MSR_FEATURE_INDEX_LIST, KVMIO, 0x0a, kvm_msr_list);
+/* Available with KVM_CAP_SYS_HYPERV_CPUID */
+#[cfg(target_arch = "x86_64")]
+ioctl_iowr_nr!(KVM_GET_SUPPORTED_HV_CPUID, KVMIO, 0xc1, kvm_cpuid2);
 
 // Ioctls for VM fds.
 
